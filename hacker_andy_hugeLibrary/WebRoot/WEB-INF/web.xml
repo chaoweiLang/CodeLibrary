@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee 
+	http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+	
+	<!-- 处于对程序业务的性能提高，而加入懒加载方法。 -->
+	<!-- 配置spring的OpenSessionInView模式 【目的：JSp页面访问懒加载数据】 
+		有一种情况：就是在对页面进行几次操作过后，页面开始不断等待加载。
+		原因：就是因为懒加载，导致访问延时，在传入页面前就出现关闭session的情况了！
+		解决方案1:就是通过OSIV的方法，延长事务管理，在页面接受数据后才关闭session
+			   2：在设置创建session-factory时，把init初始化值和max最大值提高，但是此方法治标不治本，迟早还是爆连接池
+			   3：还是就是在spring的声明式事务管理配置：<tx:method name="*" read-only="false" propagation="REQUIRED"/>
+				4：在service或者dao层的session创建处，手动关闭session。但记得先把result封装再关闭，不然一样获取不了数据
+	-->
+	<!-- 注意：访问struts时候需要带上*.action后缀 。拦截器，拦截一切action -->
+	<filter>
+		<filter-name>OpenSessionInView</filter-name>
+		<filter-class>org.springframework.orm.hibernate3.support.OpenSessionInViewFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>OpenSessionInView</filter-name>
+		<url-pattern>*.action</url-pattern>
+	</filter-mapping>
+
+	<!-- struts2配置   必须注意的一点，假如程序出现其他自定义过滤器，则必须放置在Struts2前面，因为Struts本身
+		就是一个大型的过滤器。自定义过滤器如果置于Struts后面，尽管仍然被tomcat所读取，但是所需数据经过Struts
+		进行一些列封装过滤操作与页面交互了，所以自定义过滤器没有作用
+	 -->
+	<filter>
+		<filter-name>struts2</filter-name>
+		<filter-class>org.apache.struts2.dispatcher.ng.filter.StrutsPrepareAndExecuteFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>struts2</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<!-- Spring配置IOC容器  。用dom4J 读取bean*.xml后，把bean放入容器里面-->
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>classpath:bean*.xml</param-value>
+	</context-param>
+	<!-- 配置加载spring的监听器，加载IOC容器的bean配置 -->
+	<!-- 加载ContextLoaderListener这个监听器，主要是为了得到contextloader，因为contextLoader受关联，目的
+	在于最终加载到ApplicationContext，再到beanFactory的接口，这样spring中全部的bean都被加载进来了
+	*****至于过程，所涉及的接口比较多，需要用图片展示！
+	 -->
+	<listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+
+	<welcome-file-list>
+		<welcome-file>index.jsp</welcome-file>
+	</welcome-file-list>
+</web-app>

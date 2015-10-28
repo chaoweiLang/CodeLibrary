@@ -1,0 +1,25 @@
+//接口
+public interface IBaseDao<T>
+
+public interface IDeptDao extends IBaseDao<Dept>
+public interface IEmployeeDao extends IBaseDao<Employee>
+
+//实现
+public class BaseDao<T> extends HibernateDaoSupport implements IBaseDao<T>
+
+public class DeptDao extends BaseDao<Dept> implements IDeptDao
+public class EmployeeDao extends BaseDao<Employee> implements IEmployeeDao
+
+//接口
+public interface IBaseService<T>
+
+public interface IDeptService extends IBaseService<Dept>
+public interface IEmployeeService extends IBaseService<Employee>
+
+//实现
+public class BaseService<T> implements IBaseService<T>
+
+public class DeptService extends BaseService<Dept> implements IDeptService
+public class EmployeeService extends BaseService<Employee> implements IEmployeeService
+
+//注意：在serviceImpl里面，注入的baseDao应该声明为protected，以便扩展的子类实现可以调用dao的方法。

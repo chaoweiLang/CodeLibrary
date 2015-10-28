@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+	"-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+	"http://struts.apache.org/dtds/struts-2.3.dtd">
+
+<struts>
+	<!-- 通用的常量 -->
+	<!-- 1. 修改标签默认样式 -->
+	<!-- 2. 设置开发模式运行 -->
+	<!-- 3. 关闭动态方法调用 -->
+	<!-- 4. 设置struts2访问后缀为.action-->
+	
+	<constant name="struts.ui.theme" value="simple"></constant>
+	<constant name="struts.devMode" value="true"></constant>
+	<constant name="struts.enable.DynamicMethodInvocation" value="false"></constant>
+	<constant name="struts.action.extension" value="action"></constant>
+
+
+	<package name="crm" extends="struts-default">
+		
+		<!-- 拦截器配置 -->
+		<interceptors>
+			<interceptor name="loginInterceptor" class="it.an.interceptor.LoginInterceptor"></interceptor>
+			<interceptor-stack name="loginStack">
+				<interceptor-ref name="defaultStack"></interceptor-ref>
+				<interceptor-ref name="loginInterceptor"></interceptor-ref>
+			</interceptor-stack>			
+		</interceptors>
+		<!-- 默认所有的action，都执行自定义的拦截器栈 -->
+		<default-interceptor-ref name="loginStack"></default-interceptor-ref>
+	
+	
+		<!-- 全局配置 -->
+		<global-results>
+			<result name="error">/login.jsp</result>
+		</global-results>
+	
+		<!-- 
+			主页配置
+				http://localhost:8080/crm_sys/main_execute.action
+				http://localhost:8080/crm_sys/main.action  【访问execute，返回success,可以直接这样写！！！】
+		-->
+		<!-- method="{1}"为通配符 -->
+		<action name="main_*" class="it.an.web.MainAction" method="{1}">
+			<result>/WEB-INF/jsps/main.jsp</result>
+			<result name="success" type="redirectAction">dept_list.action</result>
+			<result name="result" type="chain">main_success</result>          <!-- 注意：chain是不加action的 -->
+		</action>
+	
+		<!-- 员工登陆 -->
+		<action name="login_*" class="it.an.web.LoginAction" method="{1}">
+			<!-- 指定执行一个拦截器栈，即默认的栈, 这样自定义的栈不会执行了！ -->
+			<!-- 这里指定什么，就执行什么，  优先级更高！ -->
+			<interceptor-ref name="defaultStack"></interceptor-ref>
+			<result name="success" type="redirectAction">main.action</result>
+		</action>
+		
+		
+	</package>
+
+</struts>
+
+
+
+
+
+
+
+
+
+

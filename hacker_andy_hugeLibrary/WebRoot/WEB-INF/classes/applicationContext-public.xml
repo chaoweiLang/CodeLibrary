@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+    	 http://www.springframework.org/schema/beans/spring-beans.xsd
+     	 http://www.springframework.org/schema/context
+         http://www.springframework.org/schema/context/spring-context.xsd
+         http://www.springframework.org/schema/aop
+         http://www.springframework.org/schema/aop/spring-aop.xsd
+         http://www.springframework.org/schema/tx
+     	 http://www.springframework.org/schema/tx/spring-tx.xsd">
+     	 
+     	 <!-- 注意啊·加***都是要修改的！ -->
+     	 
+     	 
+     	 
+
+	 <!-- 开启注解扫描 ，开启全扫描-->
+	 <context:component-scan base-package="cn.itcast.."></context:component-scan>
+	 
+	 <!-- 1. 连接池配置 -->
+	 <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="driverClass" value="com.mysql.jdbc.Driver"></property>
+		<!-- *********每次使用的时候，记得要换数据库名 -->
+		<property name="jdbcUrl" value="jdbc:mysql:///crm_sys"></property>
+		<property name="user" value="root"></property>
+		<!-- ***********注意，我的mysql是没有密码的 -->
+		<property name="password" value=""></property>
+		<!-- 一下俩者是连接池的配置，涉及session的事务处理，详情可看web.xml里面的注解 -->
+		<property name="initialPoolSize" value="5"></property>
+		<property name="maxPoolSize" value="20"></property>
+	</bean>
+	
+	<!-- 
+		2. Spring与hibenrate整合，Spring创建SessionFactory对象！
+			a. 注入数据源
+			b. 配置hibenrate属性
+			c. 加载映射文件
+	 -->
+	<bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"></property>
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
+				<!-- 操作数据库时的操作单，其实用处一般 -->
+				<prop key="hibernate.show_sql">true</prop>
+				<prop key="hibernate.format_sql">true</prop>
+				<!-- 关闭注解验证（如果是javaee6.0以上版本，需要配置！） 这个非常好，如果开启，当操作数据
+					和数据库字段名称不完全一致时，就会报错，非常麻烦
+				-->
+				<prop key="javax.persistence.validation.mode">none</prop>
+			</props>
+		</property>
+		<!-- ********关系映射 -->
+		<property name="mappingLocations">
+			<list>
+				<value>classpath:it/an/bean/*.hbm.xml</value>
+			</list>
+		</property>
+	</bean>
+	
+	
+	<!-- 
+		3. Spring 声明式事务管理配置   ，这个是spring的一个核心点，其好处，谁用谁知道！！
+	-->
+	<!-- a. 事务管理器类(切面)， 注入sessionFactory -->
+	<bean id="txManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+	<!-- b. 定义事务通知， 应用事务管理器切面 -->
+	<tx:advice id="txAdvice" transaction-manager="txManager">
+		<tx:attributes>
+			<!-- propagation="REQUIRED" 如果没有开启事务，则新建一个事务。如果当前存在事务，则把该事务
+				加入到当前事务中，这是最常见的方法。
+			 -->
+			 <!-- read-only="" 这个对查询的时候，可提高性能！ -->
+			<tx:method name="get*" read-only="true" propagation="SUPPORTS"/>
+			<tx:method name="find*" read-only="true" propagation="SUPPORTS"/>
+			<tx:method name="save*" read-only="false" propagation="REQUIRED"/>
+			<tx:method name="update*" read-only="false" propagation="REQUIRED"/>
+			<tx:method name="delete*" read-only="false" propagation="REQUIRED"/>
+			<tx:method name="*" read-only="false" propagation="REQUIRED"/>
+		</tx:attributes>
+	</tx:advice>
+	<!-- c. Aop 配置， 通过切入点表达式指定对哪些对象生成代理对象,  再应用通知规则 -->
+	<aop:config>
+		<!-- 事务是在service层关闭的，所以数据要在此时接住！
+			（当前项目  it.an.*Service.*(..)方法）
+		 -->
+		<aop:pointcut expression="execution(* it..*Service.*(..))" id="pt"/>
+		<aop:advisor pointcut-ref="pt" advice-ref="txAdvice"/>
+	</aop:config>
+	
+	
+</beans>     
+
+
+
+
+
+
+
+
+
+
